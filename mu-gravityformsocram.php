@@ -9,7 +9,7 @@
  * Plugin Name:  MU Gravity Forms Ocram
  * Plugin URI:   https://github.com/marshallu/mu-gravityformsocram
  * Description:  Sends Gravity Forms submissions to Ocram to create kanban board cards.
- * Version:      1.0.0
+ * Version:      1.1.0
  * Author:       Christopher McComas
  * Requires PHP: 8.3
  */

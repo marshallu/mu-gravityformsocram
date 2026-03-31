@@ -14,7 +14,6 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class MU_GravityFormsOcram_Feed extends GFFeedAddOn {
 
-	const OCRAM_API_BASE = 'https://www.ocram.io/api/webhooks/boards/';
 
 	// phpcs:disable PSR2.Classes.PropertyDeclaration.Underscore -- GFFeedAddOn requires underscore-prefixed properties.
 
@@ -23,7 +22,7 @@ class MU_GravityFormsOcram_Feed extends GFFeedAddOn {
 	 *
 	 * @var string
 	 */
-	protected $_version = '1.0.0';
+	protected $_version = '1.1.0';
 
 	/**
 	 * Minimum Gravity Forms version required.
@@ -121,18 +120,19 @@ class MU_GravityFormsOcram_Feed extends GFFeedAddOn {
 					),
 					array(
 						'name'     => 'board_token',
-						'label'    => esc_html__( 'Board Webhook Token', 'mu-gravityformsocram' ),
+						'label'    => esc_html__( 'Board Webhook URL', 'mu-gravityformsocram' ),
 						'type'     => 'text',
 						'required' => true,
-						'class'    => 'medium',
-						'tooltip'  => esc_html__( 'The webhook token from the Ocram board settings page.', 'mu-gravityformsocram' ),
+						'class'    => 'large',
+						'tooltip'  => esc_html__( 'The full webhook URL from the Ocram board settings page.', 'mu-gravityformsocram' ),
 					),
 					array(
 						'name'     => 'title_field',
 						'label'    => esc_html__( 'Card Title', 'mu-gravityformsocram' ),
-						'type'     => 'field_select',
+						'type'     => 'text',
 						'required' => true,
-						'tooltip'  => esc_html__( 'Select the form field whose value will become the card title.', 'mu-gravityformsocram' ),
+						'class'    => 'medium',
+						'tooltip'  => esc_html__( 'The title for cards created by this feed.', 'mu-gravityformsocram' ),
 					),
 					array(
 						'name'    => 'description_source',
@@ -176,7 +176,7 @@ class MU_GravityFormsOcram_Feed extends GFFeedAddOn {
 	public function feed_list_columns() {
 		return array(
 			'feedName'    => esc_html__( 'Name', 'mu-gravityformsocram' ),
-			'board_token' => esc_html__( 'Board Token', 'mu-gravityformsocram' ),
+			'board_token' => esc_html__( 'Webhook URL', 'mu-gravityformsocram' ),
 		);
 	}
 
@@ -187,11 +187,11 @@ class MU_GravityFormsOcram_Feed extends GFFeedAddOn {
 	 * @return string
 	 */
 	public function get_column_value_board_token( $feed ) {
-		$token = rgars( $feed, 'meta/board_token' );
-		if ( empty( $token ) ) {
+		$url = rgars( $feed, 'meta/board_token' );
+		if ( empty( $url ) ) {
 			return esc_html__( '(not set)', 'mu-gravityformsocram' );
 		}
-		return esc_html( substr( $token, 0, 8 ) ) . '&hellip;';
+		return '&hellip;' . esc_html( substr( $url, -8 ) );
 	}
 
 	/**
@@ -205,15 +205,14 @@ class MU_GravityFormsOcram_Feed extends GFFeedAddOn {
 	 * @return bool
 	 */
 	public function process_feed( $feed, $entry, $form ) {
-		$token = rgars( $feed, 'meta/board_token' );
+		$url = rgars( $feed, 'meta/board_token' );
 
-		if ( empty( $token ) ) {
-			$this->log_error( __METHOD__ . '(): Board webhook token is not configured.' );
+		if ( empty( $url ) ) {
+			$this->log_error( __METHOD__ . '(): Board webhook URL is not configured.' );
 			return false;
 		}
 
-		$title_field_id = rgars( $feed, 'meta/title_field' );
-		$title          = $this->get_field_value( $form, $entry, $title_field_id );
+		$title = rgars( $feed, 'meta/title_field' );
 
 		if ( '' === $title ) {
 			$this->log_error( __METHOD__ . '(): Title field is empty — skipping.' );
@@ -233,7 +232,6 @@ class MU_GravityFormsOcram_Feed extends GFFeedAddOn {
 			}
 		}
 
-		$url      = self::OCRAM_API_BASE . rawurlencode( $token ) . '/cards';
 		$response = wp_remote_post(
 			$url,
 			array(
